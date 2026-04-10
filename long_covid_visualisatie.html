@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Long Covid — r/covidlonghaulers Analysis</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+:root{--bg:#fafafa;--bg2:#f4f4f5;--bg3:#e4e4e7;--text:#18181b;--text-dim:#71717a;--accent:#dc2626;--accent2:#ef4444;--accent-bg:#fef2f2;--symptom:#dc2626;--symptom-bg:#fef2f2;--med:#0d9488;--med-bg:#f0fdfa;--combo:#7c3aed;--combo-bg:#f5f3ff;--border:#d4d4d8;--card:#fff;--shadow:0 1px 3px rgba(0,0,0,0.08);--radius:8px}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;line-height:1.6;overflow-x:hidden}
+
+#post-hero{position:relative}
+#hero-sticky{position:sticky;top:0;height:100vh;overflow:hidden;background:var(--bg);border-bottom:1px solid var(--border)}
+#post-stream{position:absolute;top:0;left:0;right:0;will-change:transform}
+.floating-post{position:absolute;width:22%;min-width:240px;max-width:380px;padding:0.85rem 1rem;background:rgba(255,255,255,0.94);border:1px solid var(--border);border-radius:var(--radius);font-size:0.82rem;color:var(--text-dim);line-height:1.45;box-shadow:var(--shadow);pointer-events:none;transition:opacity 0.6s ease}
+.floating-post .fp-title{font-weight:600;color:var(--text);font-size:0.86rem;margin-bottom:0.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.floating-post .fp-body{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;font-size:0.76rem}
+.floating-post .fp-author{font-size:0.62rem;color:var(--accent2);margin-top:0.2rem;font-family:'JetBrains Mono',monospace}
+#hero-bottom{position:absolute;bottom:0;left:0;right:0;z-index:10;padding:2.5rem 2rem 1.5rem;background:linear-gradient(transparent,var(--bg) 70%);text-align:center}
+#hero-bottom p{color:var(--text-dim);font-size:0.88rem;max-width:460px;margin:0 auto}
+
+nav{position:sticky;top:0;z-index:100;background:rgba(250,250,250,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0.5rem 2rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+nav a{color:var(--text-dim);text-decoration:none;font-size:0.82rem;font-weight:500;transition:color 0.15s}
+nav a:hover,nav a.active{color:var(--accent)}
+nav .brand{color:var(--text);font-weight:700;font-size:0.85rem;margin-right:auto;font-family:'JetBrains Mono',monospace}
+
+.section{max-width:1100px;margin:0 auto;padding:3.5rem 2rem}
+.section-title{font-size:1.4rem;font-weight:700;margin-bottom:0.2em}
+.section-desc{color:var(--text-dim);font-size:0.9rem;max-width:680px;margin-bottom:2rem}
+
+.findings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-bottom:2.5rem}
+.finding-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;box-shadow:var(--shadow)}
+.finding-card .fc-number{font-size:1.8rem;font-weight:800;font-family:'JetBrains Mono',monospace}
+.finding-card .fc-label{font-size:0.82rem;color:var(--text-dim);margin-top:0.15rem}
+.finding-card .fc-detail{font-size:0.75rem;color:var(--text-dim);margin-top:0.4rem;line-height:1.4}
+
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.8rem;margin-bottom:2.5rem}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center;box-shadow:var(--shadow)}
+.stat-card .number{font-size:1.6rem;font-weight:800;font-family:'JetBrains Mono',monospace}
+.stat-card .label{font-size:0.75rem;color:var(--text-dim)}
+
+.chart-container{margin-bottom:2.5rem}
+.bar-row{display:flex;align-items:center;margin-bottom:0.4rem;gap:0.6rem}
+.bar-label{width:170px;min-width:170px;text-align:right;font-size:0.78rem;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:24px;background:var(--bg2);border-radius:4px;overflow:hidden;cursor:pointer;position:relative}
+.bar-track:hover{outline:2px solid var(--accent);outline-offset:-1px}
+.bar-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(0.25,0.46,0.45,0.94);display:flex;align-items:center;padding-left:0.4rem;font-size:0.7rem;font-weight:600;color:#fff;min-width:0}
+.bar-fill.symptom{background:var(--symptom)}.bar-fill.med{background:var(--med)}.bar-fill.combo{background:var(--combo)}
+.bar-count{font-size:0.72rem;color:var(--text-dim);width:40px;text-align:right;font-family:'JetBrains Mono',monospace}
+
+.cooc-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+@media(max-width:700px){.cooc-grid{grid-template-columns:1fr}}
+
+.cooc-cell{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:0.7rem 1rem;margin-bottom:0.4rem;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow);font-size:0.82rem}
+.cooc-cell .cooc-pair{font-weight:500}.cooc-cell .cooc-count{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--combo)}
+.cooc-symptom{color:var(--symptom);font-weight:600}.cooc-med{color:var(--med);font-weight:600}
+
+.timeline{display:flex;align-items:flex-end;gap:2px;height:100px;margin-bottom:0.8rem}
+.timeline-bar{flex:1;background:var(--accent);border-radius:2px 2px 0 0;transition:height 0.8s ease;min-width:8px;cursor:pointer}
+.timeline-bar:hover{background:var(--accent2)}
+.timeline-labels{display:flex;gap:2px}
+.timeline-labels span{flex:1;text-align:center;font-size:0.6rem;color:var(--text-dim);font-family:'JetBrains Mono',monospace}
+
+.timeseries-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:2rem;box-shadow:var(--shadow)}
+.timeseries-controls{display:flex;gap:0.6rem;margin-bottom:1rem;flex-wrap:wrap}
+.timeseries-controls select{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:0.35rem 0.5rem;border-radius:6px;font-size:0.8rem}
+.ts-legend{display:flex;gap:1rem;margin-top:0.8rem;font-size:0.72rem;flex-wrap:wrap}
+.ts-legend-item{display:flex;align-items:center;gap:0.25rem}
+.ts-legend-dot{width:8px;height:8px;border-radius:50%}
+
+.flair-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.6rem}
+.flair-item{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:0.6rem;text-align:center;box-shadow:var(--shadow)}
+.flair-item .flair-count{font-size:1.2rem;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent)}
+.flair-item .flair-label{font-size:0.7rem;color:var(--text-dim)}
+
+.dosage-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:0.7rem 1rem;margin-bottom:0.5rem;font-size:0.78rem;color:var(--text-dim);font-family:'JetBrains Mono',monospace;line-height:1.5;box-shadow:var(--shadow)}
+.dosage-card .dosage-id{color:var(--accent);font-size:0.65rem;margin-bottom:0.2rem}
+
+.users-table{width:100%;border-collapse:collapse;font-size:0.78rem}
+.users-table th{text-align:left;padding:0.5rem 0.7rem;border-bottom:1px solid var(--border);color:var(--text-dim);font-weight:500;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em}
+.users-table td{padding:0.4rem 0.7rem;border-bottom:1px solid var(--border);vertical-align:top}
+.users-table tr:hover td{background:var(--accent-bg)}
+
+.tag{display:inline-block;padding:0.08rem 0.35rem;border-radius:3px;font-size:0.65rem;margin:0.08rem;font-weight:500;cursor:pointer}
+.tag.symptom{background:var(--symptom-bg);color:var(--symptom)}.tag.med{background:var(--med-bg);color:var(--med)}.tag.combo{background:var(--combo-bg);color:var(--combo)}
+.tag:hover{opacity:0.7}
+
+.posts-search{display:flex;gap:0.6rem;margin-bottom:1rem;flex-wrap:wrap}
+.posts-search input{flex:1;min-width:180px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:0.5rem 0.8rem;border-radius:6px;font-size:0.85rem;font-family:'Inter',sans-serif}
+.posts-search select{background:var(--card);border:1px solid var(--border);color:var(--text);padding:0.5rem;border-radius:6px;font-size:0.8rem}
+.post-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:0.9rem 1rem;margin-bottom:0.6rem;box-shadow:var(--shadow);transition:border-color 0.15s}
+.post-card:hover{border-color:var(--accent)}
+.post-card .post-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.3rem;flex-wrap:wrap;gap:0.4rem}
+.post-card .post-title{font-weight:600;font-size:0.88rem}
+.post-card .post-meta{font-size:0.7rem;color:var(--text-dim);display:flex;gap:0.8rem}
+.post-card .post-body{font-size:0.82rem;color:var(--text-dim);margin-top:0.4rem;line-height:1.5;white-space:pre-wrap}
+.post-card .post-tags{display:flex;flex-wrap:wrap;gap:0.15rem;margin-top:0.3rem}
+.pagination{display:flex;justify-content:center;gap:0.4rem;margin-top:1rem;align-items:center}
+.pagination button{background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:0.3rem 0.7rem;border-radius:4px;cursor:pointer;font-size:0.8rem}
+.pagination button:disabled{opacity:0.3;cursor:default}
+.pagination button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.4);display:none;align-items:flex-start;justify-content:center;padding:2rem;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:12px;max-width:750px;width:100%;max-height:85vh;overflow-y:auto;padding:1.5rem;position:relative;box-shadow:0 8px 30px rgba(0,0,0,0.12)}
+.modal h3{font-size:1.05rem;font-weight:700;margin-bottom:0.5rem}
+.modal .close{position:absolute;top:0.8rem;right:0.8rem;background:none;border:none;color:var(--text-dim);font-size:1.3rem;cursor:pointer}
+.modal .close:hover{color:var(--text)}
+.modal .modal-post{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:0.8rem;margin-bottom:0.6rem}
+.modal .modal-post .mp-title{font-weight:600;font-size:0.88rem;margin-bottom:0.2rem}
+.modal .modal-post .mp-meta{font-size:0.65rem;color:var(--text-dim);margin-bottom:0.4rem;display:flex;gap:0.8rem}
+.modal .modal-post .mp-body{font-size:0.8rem;color:var(--text-dim);line-height:1.5;white-space:pre-wrap}
+.modal .modal-post .mp-tags{display:flex;flex-wrap:wrap;gap:0.15rem;margin-top:0.4rem}
+
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1rem}
+.tab-btn{padding:0.5rem 1rem;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-dim);cursor:pointer;font-size:0.85rem;font-weight:500;transition:all 0.15s}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+.fade-section{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
+.fade-section.visible{opacity:1;transform:translateY(0)}
+
+.match-context{background:#fffbeb;border:1px solid #fde68a;border-radius:4px;padding:0.3rem 0.5rem;margin:0.2rem 0;font-size:0.72rem;color:var(--text-dim);line-height:1.4}
+.match-context .match-hit{background:#fef08a;font-weight:600;color:var(--text);border-radius:2px;padding:0 2px}
+.cooc-cell{cursor:pointer;transition:background 0.15s}
+.cooc-cell:hover{background:var(--combo-bg)}
+
+@media(max-width:700px){.bar-label{width:110px;min-width:110px;font-size:0.7rem}.section{padding:2rem 1rem}.cooc-grid{grid-template-columns:1fr}nav{padding:0.5rem 1rem;gap:0.6rem}}
+</style>
+</head>
+<body>
+<div id="post-hero"><div id="hero-sticky"><div id="post-stream"></div><div id="hero-bottom"><p>Posts from r/covidlonghaulers. Scroll down for analysis.</p></div></div></div>
+
+<nav>
+  <span class="brand">r/covidlonghaulers</span>
+  <a href="#findings">Key findings</a>
+  <a href="#symptoms">Symptoms</a>
+  <a href="#medications">Medication</a>
+  <a href="#combinations">Combinations</a>
+  <a href="#timeseries">Over time</a>
+  <a href="#dosages">Dosages</a>
+  <a href="#dashboard">Dashboard</a>
+  <a href="#users">Users</a>
+  <a href="#posts">All posts</a>
+  <a href="#catcheck">Categorization check</a>
+</nav>
+
+<div id="findings" class="section fade-section">
+  <h2 class="section-title">Key findings</h2>
+  <p class="section-desc">What stands out from the first 1,000 posts on r/covidlonghaulers (July-October 2020).</p>
+  <div class="findings-grid" id="findingsGrid"></div>
+  <div class="stats-grid" id="statsGrid"></div>
+  <h3 style="font-weight:700;margin:2rem 0 0.8rem;font-size:1rem">Post volume by month</h3>
+  <div class="timeline" id="timeline"></div><div class="timeline-labels" id="timelineLabels"></div>
+  <h3 style="font-weight:700;margin:1.5rem 0 0.8rem;font-size:1rem">Post categories</h3>
+  <div class="flair-grid" id="flairGrid"></div>
+</div>
+
+<div id="symptoms" class="section fade-section">
+  <h2 class="section-title">Symptoms</h2>
+  <p class="section-desc">Most frequently mentioned symptoms. Click a bar to see the linked posts.</p>
+  <div class="chart-container" id="symptomChart"></div>
+</div>
+
+<div id="medications" class="section fade-section">
+  <h2 class="section-title">Medication & supplements</h2>
+  <p class="section-desc">Most frequently mentioned medications and supplements. Click a bar to see the linked posts.</p>
+  <div class="chart-container" id="medChart"></div>
+</div>
+
+<div id="combinations" class="section fade-section">
+  <h2 class="section-title">Symptom-medication combinations</h2>
+  <p class="section-desc">Which symptoms and medications are mentioned together most often? This shows what people try for which complaints.</p>
+  <div class="cooc-grid">
+    <div><h4 style="font-size:0.9rem;font-weight:600;margin-bottom:0.6rem">Top combinations</h4><div id="coocList"></div></div>
+    <div><h4 style="font-size:0.9rem;font-weight:600;margin-bottom:0.6rem">Lookup by symptom</h4><select id="coocSymSel" style="width:100%;margin-bottom:0.6rem;padding:0.4rem;border:1px solid var(--border);border-radius:6px;font-size:0.82rem;background:var(--card);color:var(--text)"></select><div id="coocSymResult"></div></div>
+  </div>
+</div>
+
+  <div id="timeseries" class="section fade-section">
+  <h2 class="section-title">Changes over time</h2>
+  <p class="section-desc">How do symptom and medication mentions change across months?</p>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="ts-sym">Symptoms over time</button>
+    <button class="tab-btn" data-tab="ts-med">Medication over time</button>
+  </div>
+  <div class="tab-panel active" id="ts-sym">
+    <div class="timeseries-wrap">
+      <div class="timeseries-controls">
+        <select id="tsSSel"><option value="">-- Select symptom --</option></select>
+        <select id="tsSSel2"><option value="">+ Compare --</option></select>
+      </div>
+      <canvas id="tsSCanvas" width="1000" height="280" style="width:100%;max-width:1000px;height:auto"></canvas>
+      <div class="ts-legend" id="tsSLegend"></div>
+    </div>
+  </div>
+  <div class="tab-panel" id="ts-med">
+    <div class="timeseries-wrap">
+      <div class="timeseries-controls">
+        <select id="tsMSel"><option value="">-- Select medication --</option></select>
+        <select id="tsMSel2"><option value="">+ Compare --</option></select>
+      </div>
+      <canvas id="tsMCanvas" width="1000" height="280" style="width:100%;max-width:1000px;height:auto"></canvas>
+      <div class="ts-legend" id="tsMLegend"></div>
+    </div>
+  </div>
+</div>
+
+<div id="dosages" class="section fade-section">
+  <h2 class="section-title">Dosages & regimens</h2>
+  <p class="section-desc">Concrete dosage advice people share with each other.</p>
+  <div id="dosageList"></div>
+</div>
+
+<div id="dashboard" class="section fade-section">
+  <h2 class="section-title">Dashboard</h2>
+  <p class="section-desc">Filter and explore posts by symptom, medication, category, or user.</p>
+  <div class="posts-search" style="margin-bottom:1rem"><input type="text" id="dashSearch" placeholder="Search..."><select id="dashSym"><option value="">-- Symptom --</option></select><select id="dashMed"><option value="">-- Medication --</option></select><select id="dashFlair"><option value="">-- Category --</option></select><select id="dashAuthor"><option value="">-- User --</option></select></div>
+  <div style="display:flex;gap:0.8rem;margin-bottom:1rem;flex-wrap:wrap"><div class="stat-card" style="flex:1;min-width:100px"><div class="number" style="color:var(--accent)" id="dashCount">0</div><div class="label">Results</div></div><div class="stat-card" style="flex:1;min-width:100px"><div class="number" style="color:var(--med)" id="dashMedC">0</div><div class="label">With medication</div></div></div>
+  <div id="dashResults"></div><div class="pagination" id="dashPag"></div>
+</div>
+
+<div id="users" class="section fade-section">
+  <h2 class="section-title">Most active users</h2>
+  <div style="overflow-x:auto"><table class="users-table"><thead><tr><th>User</th><th>Posts</th><th>Symptoms</th><th>Medication</th><th>Avg score</th></tr></thead><tbody id="usersBody"></tbody></table></div>
+</div>
+
+<div id="posts" class="section fade-section">
+  <h2 class="section-title">All posts</h2>
+  <div class="posts-search"><input type="text" id="postSearch" placeholder="Search..."><select id="filterSym"><option value="">-- Symptom --</option></select><select id="filterMed"><option value="">-- Medication --</option></select></div>
+  <div id="postsList"></div><div class="pagination" id="pagination"></div>
+</div>
+
+<div id="catcheck" class="section fade-section">
+  <h2 class="section-title">Categorization check</h2>
+  <p class="section-desc">Verify how symptoms and medications were detected. Each match shows the exact word that triggered the categorization and its context in the post.</p>
+  <div class="posts-search" style="margin-bottom:1rem">
+    <select id="catCheckType" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:0.5rem;border-radius:6px;font-size:0.8rem"><option value="symptom">Symptoms</option><option value="med">Medications</option></select>
+    <select id="catCheckKey" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:0.5rem;border-radius:6px;font-size:0.8rem;flex:1;min-width:180px"></select>
+  </div>
+  <div id="catCheckResults"></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modal"><button class="close" onclick="closeModal()">&times;</button><h3 id="modalTitle"></h3><div id="modalContent"></div></div></div>
+<footer style="text-align:center;padding:2rem 1rem;color:var(--text-dim);font-size:0.7rem;border-top:1px solid var(--border);margin-top:3rem">r/covidlonghaulers analysis | Data via Pushshift | 2025</footer>
+
+<script src="long_covid_data.js"></script>
+<script>
+const SM={'fatigue':'Fatigue','extreme fatigue':'Extreme fatigue','shortness of breath':'Shortness of breath','headache':'Headache','chest pain':'Chest pain','cough':'Cough','fever':'Fever','gi issues':'GI issues','brain fog':'Brain fog','anxiety':'Anxiety','muscle pain':'Muscle pain','dizziness':'Dizziness','palpitations':'Palpitations','nausea':'Nausea','tingling/numbness':'Tingling/Numbness','sore throat':'Sore throat','loss of taste/smell':'Loss of taste/smell','rash/hives':'Rash/Hives','depression':'Depression','insomnia':'Insomnia','tinnitus':'Tinnitus','joint pain':'Joint pain','tremor':'Tremor','hair loss':'Hair loss','blood clots':'Blood clots','pots/dysautonomia':'POTS/Dysautonomia','inflammation':'Inflammation','mcas/histamine':'MCAS/Histamine','costochondritis':'Costochondritis','vertigo':'Vertigo','fibromyalgia':'Fibromyalgia','chronic fatigue syndrome':'CFS','neuropathy':'Neuropathy','pulse ox concerns':'Pulse ox concerns','autoimmune':'Autoimmune','brain pressure':'Brain pressure','viral persistence':'Viral persistence'};
+const MM={'low dose naltrexone':'LDN','prednisone':'Prednisone','steroids (general)':'Steroids','vitamin d':'Vitamin D','vitamin c':'Vitamin C','omega-3/fish oil':'Omega-3','zinc':'Zinc','antihistamines':'Antihistamines','melatonin':'Melatonin','azithromycin/z-pack':'Z-pack','acetaminophen/paracetamol':'Paracetamol','ibuprofen/nsaids':'NSAIDs','aspirin':'Aspirin','magnesium':'Magnesium','b-vitamins':'B-vitamins','probiotics':'Probiotics','ssri/antidepressants':'SSRI','pepcid/famotidine':'Famotidine','quercetin':'Quercetin','ivermectin':'Ivermectin','nattokinase':'Nattokinase','coq10':'CoQ10','anti-anxiety (benzos)':'Benzos','blood thinners':'Blood thinners','curcumin/turmeric':'Turmeric','metoprolol/beta-blockers':'Beta-blockers','inhalers':'Inhalers','ppis':'PPIs','thc/cannabis':'Cannabis','cbd':'CBD','antibiotics':'Antibiotics','montelukast/singulair':'Montelukast','guaifenesin/mucinex':'Mucinex','colchicine':'Colchicine','hydroxychloroquine':'HCQ','ashwagandha':'Ashwagandha','statins':'Statins','glutathione':'Glutathione','adderall/stimulants':'Stimulants','modafinil':'Modafinil','gabapentin':'Gabapentin','antivirals':'Antivirals','fludrocortisone':'Fludrocortisone','midodrine':'Midodrine','l-arginine':'L-arginine','iron':'Iron','nicotine patch':'Nicotine patch','nicotine (general)':'Nicotine','nebulizer':'Nebulizer','blood pressure meds':'BP meds','thyroid meds':'Thyroid meds','creatine':'Creatine','l-carnitine':'L-carnitine','serrapeptase':'Serrapeptase','berberine':'Berberine','sulforaphane':'Sulforaphane','milk thistle':'Milk thistle','d-ribose':'D-ribose','l-lysine':'L-lysine','dhea':'DHEA','peptides':'Peptides','liposomal':'Liposomal','digestive enzymes':'Digestive enzymes','hocl':'HOCl','ketotifen':'Ketotifen','cromolyn':'Cromolyn','pregnenolone':'Pregnenolone','sildenafil':'Sildenafil','spironolactone':'Spironolactone','fluvoxamine':'Fluvoxamine','dextromethorphan':'DXM'};
+
+function ts(k,m){return m[k]||k}
+function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=String(s);return d.innerHTML}
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}}
+function fmtDate(utc){return utc?new Date(utc*1000).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}):''}
+
+const _postById={};DATA.posts.forEach(p=>{_postById[p.id]=p});
+
+function buildMatchHTML(matches,type){
+  if(!matches||!matches.length)return'';
+  return matches.map(m=>{
+    const ctx=esc(m.context);
+    const hit=esc(m.matched);
+    const highlighted=ctx.replace(hit,`<span class="match-hit">${hit}</span>`);
+    return`<div class="match-context"><strong>${esc(ts(m.key,type==='symptom'?SM:MM))}</strong>: “…${highlighted}…”</div>`;
+  }).join('');
+}
+
+function showPostsByIds(ids,title){
+  document.getElementById('modalTitle').textContent=title;
+  const content=document.getElementById('modalContent');content.innerHTML='';
+    ids.forEach(id=>{const p=_postById[id];if(!p)return;const d=document.createElement('div');d.className='modal-post';
+    d.innerHTML=`<div class="mp-title">${esc(p.title)}</div><div class="mp-meta"><span>${esc(p.author)}</span><span>${fmtDate(p.created_utc)}</span><span>&#9650;${p.score}</span><span>&#128172;${p.num_comments}</span></div><div class="mp-body">${esc(p.selftext||'')}</div><div class="mp-tags">${p.symptoms.map(s=>`<span class="tag symptom">${esc(ts(s,SM))}</span>`).join('')}${p.medications.map(m=>`<span class="tag med">${esc(ts(m,MM))}</span>`).join('')}</div>`;
+    content.appendChild(d)});
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+// HERO - scrollytelling: posts scroll through viewport with fade
+(function(){
+  try{
+    const hero=document.getElementById('post-hero');
+    const stream=document.getElementById('post-stream');
+    const pp=DATA.posts.filter(p=>p.selftext&&p.selftext.length>20);
+    if(!pp.length)return;
+
+    hero.style.height='350vh';
+
+    const COLS=4,ROW_H=140;
+    const TOTAL_ROWS=30;
+    let idx=Math.floor(Math.random()*pp.length);
+    const allEls=[];
+
+    for(let row=0;row<TOTAL_ROWS;row++){
+      for(let col=0;col<COLS;col++){
+        const left=col*25+0.5+Math.random()*1.5;
+        const top=row*ROW_H+Math.random()*20;
+        const e=document.createElement('div');
+        e.className='floating-post';
+        e.style.cssText=`left:${left}%;top:${top}px;opacity:0`;
+        const p=pp[idx%pp.length];idx++;
+        e.innerHTML=`<div class="fp-title">${esc(p.title)}</div><div class="fp-body">${esc(p.selftext.substring(0,160).trim())}</div><div class="fp-author">${esc(p.author)}</div>`;
+        stream.appendChild(e);
+        allEls.push({el:e,top:top});
+      }
+    }
+
+    const streamH=TOTAL_ROWS*ROW_H+200;
+    stream.style.height=streamH+'px';
+
+    let ticking=false;
+    function update(){
+      const rect=hero.getBoundingClientRect();
+      const heroH=hero.offsetHeight;
+      const vh=window.innerHeight;
+      const scrolled=-rect.top;
+      const maxScroll=heroH-vh;
+      const progress=Math.max(0,Math.min(1,scrolled/maxScroll));
+      const totalTravel=streamH-vh;
+      const translateY=progress*totalTravel;
+      stream.style.transform=`translateY(${-translateY}px)`;
+
+      allEls.forEach(item=>{
+        const visTop=item.top-translateY;
+        const inView=visTop>-100&&visTop<vh+100;
+        const nearEdge=visTop<60||visTop>vh-60;
+        if(inView){
+          item.el.style.opacity=nearEdge?'0.3':'0.9';
+        }else{
+          item.el.style.opacity='0';
+        }
+      });
+      ticking=false;
+    }
+
+    window.addEventListener('scroll',()=>{
+      if(!ticking){requestAnimationFrame(update);ticking=true}
+    },{passive:true});
+    update();
+  }catch(err){console.error('Hero error:',err)}
+})();
+
+// KEY FINDINGS
+(function(){
+  try{
+    const g=document.getElementById('findingsGrid');
+    const medPosts=DATA.posts.filter(p=>p.medications.length>0).length;
+    const suppPosts=DATA.posts.filter(p=>p.medications.some(m=>['vitamin d','vitamin c','zinc','magnesium','quercetin','nattokinase','b-vitamins','omega-3/fish oil','coq10','melatonin','probiotics'].includes(m))).length;
+    const findings=[
+      {n:DATA.symptom_counts.fatigue||0,l:'Posts mention fatigue',d:'The most common symptom — more than shortness of breath ('+(DATA.symptom_counts['shortness of breath']||0)+') or headache ('+(DATA.symptom_counts.headache||0)+')'},
+      {n:medPosts?Math.round(medPosts/DATA.total_posts*100)+'%':'0',l:'Posts mention medication',d:medPosts+' of '+DATA.total_posts+' posts mention at least one medication or supplement'},
+      {n:DATA.med_counts['steroids (general)']||0,l:'Posts mention steroids',d:'The most mentioned medication category, ahead of PPIs ('+(DATA.med_counts.ppis||0)+') and Vitamin D ('+(DATA.med_counts['vitamin d']||0)+')'},
+      {n:DATA.symptom_med_cooc&&DATA.symptom_med_cooc[0]?DATA.symptom_med_cooc[0].count:'?',l:DATA.symptom_med_cooc&&DATA.symptom_med_cooc[0]?ts(DATA.symptom_med_cooc[0].symptom,SM)+' + '+ts(DATA.symptom_med_cooc[0].med,MM):'',d:'The most common symptom-medication co-occurrence'},
+      {n:DATA.dosage_info?DATA.dosage_info.length:0,l:'Dosage snippets found',d:'Concrete dosage advice shared between users without medical supervision'},
+      {n:suppPosts,l:'Posts mention supplements',d:'Vitamins, minerals, and herbal supplements — people experimenting on their own'},
+    ];
+    findings.forEach(f=>{const c=document.createElement('div');c.className='finding-card';c.innerHTML=`<div class="fc-number" style="color:var(--accent)">${f.n}</div><div class="fc-label">${f.l}</div><div class="fc-detail">${f.d}</div>`;g.appendChild(c)});
+  }catch(err){console.error('Findings error:',err)}
+})();
+
+// STATS
+(function(){
+  try{
+    const g=document.getElementById('statsGrid');
+    [{n:DATA.total_posts,l:'Posts'},{n:DATA.total_users,l:'Users'},{n:Object.keys(DATA.symptom_counts).length,l:'Symptoms'},{n:Object.keys(DATA.med_counts).length,l:'Medications/Supplements'}].forEach(x=>{const c=document.createElement('div');c.className='stat-card';c.innerHTML=`<div class="number" style="color:var(--accent)">${x.n}</div><div class="label">${x.l}</div>`;g.appendChild(c)});
+  }catch(err){console.error('Stats error:',err)}
+})();
+
+// TIMELINE
+(function(){
+  try{
+    const tl=document.getElementById('timeline'),lb=document.getElementById('timelineLabels');
+    const m=Object.entries(DATA.monthly_counts),mx=Math.max(...m.map(x=>x[1]));
+    m.forEach(([mo,cnt])=>{const b=document.createElement('div');b.className='timeline-bar';b.style.height=(cnt/mx*100)+'%';b.title=mo+': '+cnt;tl.appendChild(b);const s=document.createElement('span');s.textContent=mo.substring(2);lb.appendChild(s)});
+  }catch(err){console.error('Timeline error:',err)}
+})();
+
+// FLAIR
+(function(){
+  try{
+    const g=document.getElementById('flairGrid');
+    Object.entries(DATA.flair_counts).sort((a,b)=>b[1]-a[1]).forEach(([f,c])=>{const i=document.createElement('div');i.className='flair-item';i.innerHTML=`<div class="flair-count">${c}</div><div class="flair-label">${esc(f)}</div>`;g.appendChild(i)});
+  }catch(err){console.error('Flair error:',err)}
+})();
+
+// BAR CHARTS
+function renderBars(id,data,cls,translator,linkType,max){
+  try{
+    const c=document.getElementById(id);const sorted=Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,max||25);const mx=sorted[0]?sorted[0][1]:1;
+    sorted.forEach(([name,count])=>{const row=document.createElement('div');row.className='bar-row';const pct=count/mx*100;
+      const track=document.createElement('div');track.className='bar-track';track.dataset.linkType=linkType;track.dataset.linkKey=name;
+      track.addEventListener('click',()=>{
+        const map={symptom:DATA.symptom_posts,med:DATA.med_posts};
+        const ids=map[linkType]?map[linkType][name]||[]:[];
+        showPostsByIds(ids,ts(name,{...SM,...MM})+' — linked posts ('+ids.length+')');
+      });
+      const fill=document.createElement('div');fill.className='bar-fill '+cls;fill.style.width='0%';fill.dataset.width=pct+'%';fill.textContent=pct>25?count:'';
+      track.appendChild(fill);
+      const label=document.createElement('div');label.className='bar-label';label.textContent=translator(name);
+      const cnt=document.createElement('div');cnt.className='bar-count';cnt.textContent=count;
+      row.appendChild(label);row.appendChild(track);row.appendChild(cnt);c.appendChild(row)});
+  }catch(err){console.error('renderBars error:',err)}
+}
+renderBars('symptomChart',DATA.symptom_counts,'symptom',n=>ts(n,SM),'symptom',25);
+renderBars('medChart',DATA.med_counts,'med',n=>ts(n,MM),'med',30);
+
+// CO-OCCURRENCE
+(function(){
+  try{
+    const list=document.getElementById('coocList');
+    DATA.symptom_med_cooc.slice(0,20).forEach(item=>{
+      const c=document.createElement('div');c.className='cooc-cell';
+      c.innerHTML=`<span class="cooc-pair"><span class="cooc-symptom">${esc(ts(item.symptom,SM))}</span> + <span class="cooc-med">${esc(ts(item.med,MM))}</span></span><span class="cooc-count">${item.count}</span>`;
+      c.addEventListener('click',()=>{
+        const ids=item.post_ids||[];
+        showPostsByIds(ids,ts(item.symptom,SM)+' + '+ts(item.med,MM)+' — co-occurrence ('+ids.length+' posts)');
+      });
+      list.appendChild(c);
+    });
+    const sel=document.getElementById('coocSymSel');
+    Object.entries(DATA.symptom_counts).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{const o=document.createElement('option');o.value=k;o.textContent=ts(k,SM)+' ('+v+')';sel.appendChild(o)});
+    sel.addEventListener('change',()=>{
+      const res=document.getElementById('coocSymResult');res.innerHTML='';
+      if(!sel.value)return;
+      const matches=DATA.symptom_med_cooc.filter(item=>item.symptom===sel.value).sort((a,b)=>b.count-a.count);
+      if(!matches.length){res.innerHTML='<p style="color:var(--text-dim);font-size:0.82rem">No co-occurrences found.</p>';return}
+      matches.forEach(item=>{const c=document.createElement('div');c.className='cooc-cell';
+        c.innerHTML=`<span class="cooc-pair"><span class="cooc-med">${esc(ts(item.med,MM))}</span></span><span class="cooc-count">${item.count}</span>`;
+        c.addEventListener('click',()=>{
+          const ids=item.post_ids||[];
+          showPostsByIds(ids,ts(item.symptom,SM)+' + '+ts(item.med,MM)+' — co-occurrence ('+ids.length+' posts)');
+        });
+        res.appendChild(c)});
+    });
+  }catch(err){console.error('Cooc error:',err)}
+})();
+
+// MODAL
+function showLinkedPosts(type,key){
+  try{
+    const map={symptom:DATA.symptom_posts,med:DATA.med_posts};
+    const ids=map[type]?map[type][key]||[]:[];
+    showPostsByIds(ids,ts(key,{...SM,...MM})+' — linked posts ('+ids.length+')');
+  }catch(err){console.error('Modal error:',err)}
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open')}
+document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
+
+// TIMESERIES - canvas line charts
+(function(){
+  try{
+    const months=Object.keys(DATA.monthly_counts).sort();
+
+    function popSel(id,items,map){const s=document.getElementById(id);Object.keys(items).sort((a,b)=>items[b]-items[a]).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=ts(k,map);s.appendChild(o)})}
+
+    const COLORS_SYM=['#dc2626','#ef4444','#f97316','#eab308','#a3e635','#22d3ee','#818cf9','#e879f9'];
+    const COLORS_MED=['#0d9488','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#f97316','#84cc16','#14b8a6'];
+
+    function drawChart(canvasId,legendId,sel1Id,sel2Id,timeData,counts,map,palette){
+      const canvas=document.getElementById(canvasId);
+      const ctx=canvas.getContext('2d');
+      const legend=document.getElementById(legendId);
+      legend.innerHTML='';
+      const s1=document.getElementById(sel1Id).value;
+      const s2=document.getElementById(sel2Id).value;
+      let keys=[s1,s2].filter(Boolean);
+
+      if(!keys.length){
+        keys=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5).map(e=>e[0]);
+        legend.innerHTML='<span style="color:var(--text-dim);font-size:0.75rem">Top 5 shown. Select items above to compare.</span>';
+      }
+
+      const dpr=window.devicePixelRatio||1;
+      const W=canvas.width*dpr;
+      const H=canvas.height*dpr;
+      canvas.width=W;canvas.height=H;
+      ctx.scale(dpr,dpr);
+      const w=canvas.width/dpr,h=canvas.height/dpr;
+      const padL=50,padR=20,padT=20,padB=50;
+      const chartW=w-padL-padR,chartH=h-padT-padB;
+
+      let maxV=0;
+      keys.forEach(k=>{months.forEach(m=>{const v=(timeData[m]||{})[k]||0;if(v>maxV)maxV=v})});
+      if(!maxV)maxV=1;
+      maxV=Math.ceil(maxV*1.15);
+
+      ctx.clearRect(0,0,w,h);
+
+      // Grid lines + Y labels
+      ctx.strokeStyle='#e4e4e7';ctx.lineWidth=1;
+      ctx.font='11px Inter,system-ui,sans-serif';ctx.fillStyle='#71717a';ctx.textAlign='right';
+      const ySteps=5;
+      for(let i=0;i<=ySteps;i++){
+        const y=padT+chartH-chartH*i/ySteps;
+        ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+chartW,y);ctx.stroke();
+        ctx.fillText(Math.round(maxV*i/ySteps),padL-6,y+4);
+      }
+
+      // X labels
+      ctx.textAlign='center';
+      months.forEach((m,i)=>{
+        const x=padL+chartW*i/(months.length-1||1);
+        ctx.fillText(m.substring(2),x,h-padB+18);
+      });
+
+      // Lines
+      keys.forEach((k,idx)=>{
+        const color=palette[idx%palette.length];
+        ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin='round';
+        ctx.beginPath();
+        months.forEach((m,i)=>{
+          const v=(timeData[m]||{})[k]||0;
+          const x=padL+chartW*i/(months.length-1||1);
+          const y=padT+chartH-chartH*v/maxV;
+          if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+        });
+        ctx.stroke();
+
+        // Dots
+        months.forEach((m,i)=>{
+          const v=(timeData[m]||{})[k]||0;
+          const x=padL+chartW*i/(months.length-1||1);
+          const y=padT+chartH-chartH*v/maxV;
+          ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+          ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();
+        });
+
+        // Legend entry
+        const item=document.createElement('div');item.className='ts-legend-item';
+        item.innerHTML=`<span class="ts-legend-dot" style="background:${color}"></span>${esc(ts(k,map))}`;
+        legend.appendChild(item);
+      });
+    }
+
+    popSel('tsSSel',DATA.symptom_counts,SM);popSel('tsSSel2',DATA.symptom_counts,SM);
+    popSel('tsMSel',DATA.med_counts,MM);popSel('tsMSel2',DATA.med_counts,MM);
+
+    function symChart(){drawChart('tsSCanvas','tsSLegend','tsSSel','tsSSel2',DATA.symptom_time,DATA.symptom_counts,SM,COLORS_SYM)}
+    function medChart(){drawChart('tsMCanvas','tsMLegend','tsMSel','tsMSel2',DATA.med_time,DATA.med_counts,MM,COLORS_MED)}
+
+    symChart();medChart();
+
+    document.getElementById('tsSSel').addEventListener('change',symChart);
+    document.getElementById('tsSSel2').addEventListener('change',symChart);
+    document.getElementById('tsMSel').addEventListener('change',medChart);
+    document.getElementById('tsMSel2').addEventListener('change',medChart);
+  }catch(err){console.error('Timeseries error:',err)}
+})();
+
+// TABS
+document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{btn.parentElement.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');btn.closest('.section').querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById(btn.dataset.tab).classList.add('active')})});
+
+// DOSAGES
+(function(){
+  try{
+    const list=document.getElementById('dosageList');
+    DATA.dosage_info.forEach(d=>{const p=_postById[d.post_id];const c=document.createElement('div');c.className='dosage-card';c.innerHTML=`<div class="dosage-id">${esc(d.post_id)} — ${esc(p?p.title:'')}</div>${esc(d.snippet)}`;c.style.cursor='pointer';c.addEventListener('click',()=>{showPostsByIds([d.post_id],'Dosage — '+esc(p?p.title:''))});list.appendChild(c)});
+    if(!DATA.dosage_info.length)list.innerHTML='<p style="color:var(--text-dim)">No dosage info found.</p>';
+  }catch(err){console.error('Dosages error:',err)}
+})();
+
+// DASHBOARD
+(function(){
+  try{
+    const sr=document.getElementById('dashSearch'),sS=document.getElementById('dashSym'),sM=document.getElementById('dashMed'),sF=document.getElementById('dashFlair'),sA=document.getElementById('dashAuthor');
+    const res=document.getElementById('dashResults'),pag=document.getElementById('dashPag');const PP=15;let cp=0,filtered=[];
+    function popSel(id,items,map){const s=document.getElementById(id);Object.keys(items).sort((a,b)=>items[b]-items[a]).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=ts(k,map);s.appendChild(o)})}
+    popSel('dashSym',DATA.symptom_counts,SM);popSel('dashMed',DATA.med_counts,MM);
+    Object.entries(DATA.flair_counts).sort((a,b)=>b[1]-a[1]).forEach(([f])=>{const o=document.createElement('option');o.value=f;o.textContent=f;sF.appendChild(o)});
+    DATA.top_users.slice(0,100).forEach(([u])=>{const o=document.createElement('option');o.value=u;o.textContent=u;sA.appendChild(o)});
+    function apply(){const q=sr.value.toLowerCase(),sy=sS.value,me=sM.value,fl=sF.value,au=sA.value;filtered=DATA.posts.filter(p=>{if(q&&!(p.title.toLowerCase().includes(q)||(p.selftext||'').toLowerCase().includes(q)))return false;if(sy&&!p.symptoms.includes(sy))return false;if(me&&!p.medications.includes(me))return false;if(fl&&p.flair!==fl)return false;if(au&&p.author!==au)return false;return true});cp=0;render()}
+    function render(){const start=cp*PP,page=filtered.slice(start,start+PP);res.innerHTML='';document.getElementById('dashCount').textContent=filtered.length;document.getElementById('dashMedC').textContent=filtered.filter(p=>p.medications.length>0).length;
+      page.forEach(p=>{const c=document.createElement('div');c.className='post-card';c.innerHTML=`<div class="post-header"><div class="post-title">${esc(p.title)}</div><div class="post-meta"><span>${esc(p.author)}</span><span>${fmtDate(p.created_utc)}</span><span>&#9650;${p.score}</span></div></div><div class="post-body">${esc(p.selftext||'')}</div><div class="post-tags">${p.symptoms.map(s=>`<span class="tag symptom">${esc(ts(s,SM))}</span>`).join('')}${p.medications.map(m=>`<span class="tag med">${esc(ts(m,MM))}</span>`).join('')}</div>`;res.appendChild(c)});
+      const tp=Math.ceil(filtered.length/PP);pag.innerHTML='';if(tp>1){const pr=document.createElement('button');pr.textContent='\u2190';pr.disabled=cp===0;pr.onclick=()=>{cp--;render()};pag.appendChild(pr);for(let i=Math.max(0,cp-3);i<Math.min(tp,cp+4);i++){const b=document.createElement('button');b.textContent=i+1;b.className=i===cp?'active':'';b.onclick=()=>{cp=i;render()};pag.appendChild(b)}const nx=document.createElement('button');nx.textContent='\u2192';nx.disabled=cp>=tp-1;nx.onclick=()=>{cp++;render()};pag.appendChild(nx)}pag.insertAdjacentHTML('beforeend',`<span style="color:var(--text-dim);font-size:0.75rem;margin-left:0.8rem">${filtered.length} results</span>`)}
+    sr.addEventListener('input',debounce(apply,300));sS.addEventListener('change',apply);sM.addEventListener('change',apply);sF.addEventListener('change',apply);sA.addEventListener('change',apply);apply();
+  }catch(err){console.error('Dashboard error:',err)}
+})();
+
+// USERS
+(function(){
+  try{
+    const body=document.getElementById('usersBody');
+    DATA.top_users.slice(0,50).forEach(([u,d])=>{const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:600;font-family:'JetBrains Mono',monospace;font-size:0.75rem">${esc(u)}</td><td>${d.post_count}</td><td>${d.symptoms.slice(0,4).map(s=>`<span class="tag symptom">${esc(ts(s,SM))}</span>`).join('')}${d.symptoms.length>4?' +'+(d.symptoms.length-4):''}</td><td>${d.medications.slice(0,3).map(m=>`<span class="tag med">${esc(ts(m,MM))}</span>`).join('')}${d.medications.length>3?' +'+(d.medications.length-3):''}</td><td style="font-family:'JetBrains Mono',monospace;font-size:0.75rem">${d.avg_score}</td>`;body.appendChild(tr)});
+  }catch(err){console.error('Users error:',err)}
+})();
+
+// POSTS BROWSER
+(function(){
+  try{
+    const si=document.getElementById('postSearch'),fS=document.getElementById('filterSymptom'),fM=document.getElementById('filterMed');const listEl=document.getElementById('postsList'),pagEl=document.getElementById('pagination');const PP=20;let cp=0,filtered=[];
+    function popSel(id,items,map){const s=document.getElementById(id);Object.keys(items).sort((a,b)=>items[b]-items[a]).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=ts(k,map);s.appendChild(o)})}
+    popSel('filterSymptom',DATA.symptom_counts,SM);popSel('filterMed',DATA.med_counts,MM);
+    function apply(){const q=si.value.toLowerCase(),s=fS.value,m=fM.value;filtered=DATA.posts.filter(p=>{if(q&&!(p.title.toLowerCase().includes(q)||(p.selftext||'').toLowerCase().includes(q)))return false;if(s&&!p.symptoms.includes(s))return false;if(m&&!p.medications.includes(m))return false;return true});cp=0;render()}
+    function render(){const start=cp*PP,page=filtered.slice(start,start+PP);listEl.innerHTML='';
+      page.forEach(p=>{const c=document.createElement('div');c.className='post-card';c.innerHTML=`<div class="post-header"><div class="post-title">${esc(p.title)}</div><div class="post-meta"><span>${esc(p.author)}</span><span>${fmtDate(p.created_utc)}</span><span>&#9650;${p.score}</span><span>&#128172;${p.num_comments}</span></div></div><div class="post-body">${esc(p.selftext||'')}</div><div class="post-tags">${p.symptoms.map(s=>`<span class="tag symptom">${esc(ts(s,SM))}</span>`).join('')}${p.medications.map(m=>`<span class="tag med">${esc(ts(m,MM))}</span>`).join('')}</div>`;listEl.appendChild(c)});
+      const tp=Math.ceil(filtered.length/PP);pagEl.innerHTML='';if(tp>1){const pr=document.createElement('button');pr.textContent='\u2190';pr.disabled=cp===0;pr.onclick=()=>{cp--;render()};pagEl.appendChild(pr);for(let i=Math.max(0,cp-3);i<Math.min(tp,cp+4);i++){const b=document.createElement('button');b.textContent=i+1;b.className=i===cp?'active':'';b.onclick=()=>{cp=i;render()};pagEl.appendChild(b)}const nx=document.createElement('button');nx.textContent='\u2192';nx.disabled=cp>=tp-1;nx.onclick=()=>{cp++;render()};pagEl.appendChild(nx)}pagEl.insertAdjacentHTML('beforeend',`<span style="color:var(--text-dim);font-size:0.75rem;margin-left:0.8rem">${filtered.length} posts</span>`)}
+    si.addEventListener('input',debounce(apply,300));fS.addEventListener('change',apply);fM.addEventListener('change',apply);render();
+  }catch(err){console.error('Posts error:',err)}
+})();
+
+// CATEGORIZATION CHECK
+(function(){
+  try{
+    const typeSel=document.getElementById('catCheckType');
+    const keySel=document.getElementById('catCheckKey');
+    const results=document.getElementById('catCheckResults');
+
+    function populateKeys(){
+      keySel.innerHTML='';
+      const items=typeSel.value==='symptom'?DATA.symptom_counts:DATA.med_counts;
+      const map=typeSel.value==='symptom'?SM:MM;
+      Object.entries(items).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
+        const o=document.createElement('option');o.value=k;o.textContent=ts(k,map)+' ('+v+')';keySel.appendChild(o);
+      });
+      renderResults();
+    }
+
+    function renderResults(){
+      results.innerHTML='';
+      const key=keySel.value;
+      const matchField=typeSel.value==='symptom'?'symptom_matches':'med_matches';
+      const map=typeSel.value==='symptom'?SM:MM;
+      const postsWithMatch=DATA.posts.filter(p=>p[matchField]&&p[matchField].some(m=>m.key===key));
+      if(!postsWithMatch.length){results.innerHTML='<p style="color:var(--text-dim);font-size:0.82rem">No matches found.</p>';return}
+
+      let shown=0;
+      postsWithMatch.forEach(p=>{
+        if(shown>=30)return;
+        const matches=p[matchField].filter(m=>m.key===key);
+        matches.forEach(m=>{
+          if(shown>=30)return;
+          shown++;
+          const d=document.createElement('div');
+          d.className='dosage-card';
+          d.style.cursor='pointer';
+          const ctx=esc(m.context);
+          const hit=esc(m.matched);
+          const highlighted=ctx.replace(hit,`<span class="match-hit">${hit}</span>`);
+          d.innerHTML=`<div class="dosage-id">${esc(p.id)} — ${esc(p.title)} [matched: <span class="match-hit">${hit}</span>]</div>…${highlighted}…`;
+          d.addEventListener('click',()=>{showPostsByIds([p.id],esc(p.title))});
+          results.appendChild(d);
+        });
+      });
+      if(postsWithMatch.length>30){
+        results.insertAdjacentHTML('beforeend',`<p style="color:var(--text-dim);font-size:0.75rem;margin-top:0.5rem">Showing first 30 of ${postsWithMatch.length} matches</p>`);
+      }
+    }
+
+    typeSel.addEventListener('change',populateKeys);
+    keySel.addEventListener('change',renderResults);
+    populateKeys();
+  }catch(err){console.error('CatCheck error:',err)}
+})();
+
+// SCROLL ANIMATIONS
+(function(){
+  try{
+    const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');e.target.querySelectorAll('.bar-fill').forEach(bar=>{setTimeout(()=>{bar.style.width=bar.dataset.width},200)})}})},{threshold:0.1});
+    document.querySelectorAll('.fade-section').forEach(s=>obs.observe(s));
+  }catch(err){console.error('Scroll error:',err)}
+})();
+
+// NAV
+(function(){
+  try{
+    const secs=document.querySelectorAll('.section,#post-hero');const links=document.querySelectorAll('nav a');
+    window.addEventListener('scroll',()=>{let cur='';secs.forEach(s=>{if(window.scrollY>=s.offsetTop-200)cur=s.id});links.forEach(l=>{l.classList.toggle('active',l.getAttribute('href')==='#'+cur)})});
+  }catch(err){console.error('Nav error:',err)}
+})();
+</script>
+</body>
+</html>
